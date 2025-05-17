@@ -1,6 +1,7 @@
 <script lang="ts">
     import Button from "$lib5/button/Button.svelte";
     import Input from "$lib5/form/Input.svelte";
+    import InputCheckbox from "$lib5/form/InputCheckbox.svelte";
     import {PATTERN_ATTR, PATTERN_ATTR_DESC} from "$utils/patterns";
     import Form from "$lib5/form/Form.svelte";
     import {fetchPost} from "$api/fetch";
@@ -28,6 +29,8 @@
     let err = $state('');
     let name = $state('');
     let desc = $state('');
+    let user_editable = $state(false);
+    let is_email = $state(false);
 
     $effect(() => {
         requestAnimationFrame(() => {
@@ -45,6 +48,8 @@
         let payload: UserAttrConfigRequest = {
             name,
             desc: desc || undefined,
+            user_editable,
+            is_email
         };
         let res = await fetchPost<UserAttrConfigEntity>(form.action, payload);
         if (res.body) {
@@ -73,6 +78,12 @@
                 placeholder={ta.attrs.desc}
                 pattern={PATTERN_ATTR_DESC}
         />
+        <InputCheckbox ariaLabel={ta.attrs.user_editable} bind:checked={user_editable}>
+            {ta.attrs.user_editable}
+        </InputCheckbox>
+        <InputCheckbox ariaLabel={ta.attrs.is_email} bind:checked={is_email}>
+            {ta.attrs.is_email}
+        </InputCheckbox>
 
         <Button type="submit">
             {t.common.save}

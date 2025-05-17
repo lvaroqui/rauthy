@@ -880,17 +880,19 @@ VALUES ($1, $2, $3, $4, $5, $6)"#;
 
 pub async fn user_attr_config(data_before: Vec<UserAttrConfigEntity>) -> Result<(), ErrorResponse> {
     let sql_1 = "DELETE FROM user_attr_config";
-    let sql_2 = "INSERT INTO user_attr_config (name, \"desc\") VALUES ($1, $2)";
+    let sql_2 = "INSERT INTO user_attr_config (name, \"desc\") VALUES ($1, $2, $3, $4)";
 
     if is_hiqlite() {
         DB::hql().execute(sql_1, params!()).await?;
         for b in data_before {
-            DB::hql().execute(sql_2, params!(b.name, b.desc)).await?;
+            DB::hql()
+                .execute(sql_2, params!(b.name, b.desc, b.user_editable, b.is_email))
+                .await?;
         }
     } else {
         DB::pg_execute(sql_1, &[]).await?;
         for b in data_before {
-            DB::pg_execute(sql_2, &[&b.name, &b.desc]).await?;
+            DB::pg_execute(sql_2, &[&b.name, &b.desc, &b.user_editable, &b.is_email]).await?;
         }
     }
     Ok(())

@@ -1,6 +1,7 @@
 <script lang="ts">
     import Button from "$lib5/button/Button.svelte";
     import Input from "$lib5/form/Input.svelte";
+    import InputCheckbox from "$lib5/form/InputCheckbox.svelte";
     import IconCheck from "$icons/IconCheck.svelte";
     import {useI18n} from "$state/i18n.svelte";
     import {useI18nAdmin} from "$state/i18n_admin.svelte";
@@ -26,11 +27,15 @@
     let success = $state(false);
     let name = $state(attr.name);
     let desc = $state(attr.desc);
+    let user_editable = $state(attr.user_editable);
+    let is_email = $state(attr.is_email);
 
     $effect(() => {
         if (attr.name) {
             name = attr.name;
             desc = attr.desc;
+            user_editable = attr.user_editable
+            is_email = attr.is_email
         }
     });
 
@@ -45,6 +50,8 @@
         let payload: UserAttrConfigRequest = {
             name,
             desc: desc || undefined,
+            user_editable,
+            is_email
         }
 
         let res = await fetchPut(form.action, payload);
@@ -78,6 +85,15 @@
             width="14.5rem"
             pattern={PATTERN_ATTR_DESC}
     />
+    <div>
+        <InputCheckbox ariaLabel={ta.attrs.user_editable} bind:checked={user_editable} disabled=true>
+            {ta.attrs.user_editable}
+        </InputCheckbox>
+        <p class="text-xs">An attribute cannot be made user editable after creation</p>
+    </div>
+    <InputCheckbox ariaLabel={ta.attrs.is_email} bind:checked={is_email}>
+        {ta.attrs.is_email}
+    </InputCheckbox>
 
     <div class="flex gap-05">
         <Button type="submit">

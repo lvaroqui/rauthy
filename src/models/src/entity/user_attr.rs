@@ -22,6 +22,8 @@ use utoipa::ToSchema;
 pub struct UserAttrConfigEntity {
     pub name: String,
     pub desc: Option<String>,
+    pub user_editable: bool,
+    pub is_email: bool,
 }
 
 impl From<tokio_postgres::Row> for UserAttrConfigEntity {
@@ -29,6 +31,8 @@ impl From<tokio_postgres::Row> for UserAttrConfigEntity {
         Self {
             name: row.get("name"),
             desc: row.get("desc"),
+            user_editable: row.get("user_editable"),
+            is_email: row.get("is_email"),
         }
     }
 }
@@ -56,14 +60,24 @@ impl UserAttrConfigEntity {
         if is_hiqlite() {
             DB::hql()
                 .execute(
-                    "INSERT INTO user_attr_config (name, \"desc\") VALUES ($1, $2)",
-                    params!(&new_attr.name, &new_attr.desc),
+                    "INSERT INTO user_attr_config (name, \"desc\", user_editable, is_email) VALUES ($1, $2, $3, $4)",
+                    params!(
+                        &new_attr.name,
+                        &new_attr.desc,
+                        new_attr.user_editable as u8,
+                        new_attr.is_email as u8
+                    ),
                 )
                 .await?;
         } else {
             DB::pg_execute(
-                "INSERT INTO user_attr_config (name, \"desc\") VALUES ($1, $2)",
-                &[&new_attr.name, &new_attr.desc],
+                "INSERT INTO user_attr_config (name, \"desc\", user_editable, is_email) VALUES ($1, $2, $3, $4)",
+                &[
+                    &new_attr.name,
+                    &new_attr.desc,
+                    &new_attr.user_editable,
+                    &new_attr.is_email,
+                ],
             )
             .await?;
         };
@@ -72,6 +86,8 @@ impl UserAttrConfigEntity {
         let slf = Self {
             name: new_attr.name.clone(),
             desc: new_attr.desc.clone(),
+            user_editable: new_attr.user_editable,
+            is_email: new_attr.user_editable,
         };
         attrs.push(slf.clone());
         DB::hql()
@@ -230,8 +246,17 @@ impl UserAttrConfigEntity {
     ) -> Result<Self, ErrorResponse> {
         let mut slf = Self::find(name.clone()).await?;
 
+        if !slf.user_editable && req_data.user_editable {
+            return Err(ErrorResponse::new(
+                ErrorResponseType::BadRequest,
+                "You cannot make an existing user attribute user editable after creation",
+            ));
+        }
+
         slf.name.clone_from(&req_data.name);
         slf.desc.clone_from(&req_data.desc);
+        slf.user_editable = req_data.user_editable;
+        slf.is_email = req_data.is_email;
 
         let client = DB::hql();
         let mut scope_updates = Vec::new();
@@ -315,8 +340,8 @@ impl UserAttrConfigEntity {
             // need another user_attr_values update here
 
             txn.push((
-                "UPDATE user_attr_config SET name  = $1, \"desc\" = $2 WHERE name = $3",
-                params!(&slf.name, &slf.desc, name),
+                "UPDATE user_attr_config SET name  = $1, \"desc\" = $2, user_editable = $3, is_email = $4 WHERE name = $5",
+                params!(&slf.name, &slf.desc, slf.user_editable, slf.is_email,  name),
             ));
 
             client.txn(txn).await?;
@@ -332,8 +357,8 @@ impl UserAttrConfigEntity {
 
             DB::pg_txn_append(
                 &txn,
-                "UPDATE user_attr_config SET name  = $1, \"desc\" = $2 WHERE name = $3",
-                &[&slf.name, &slf.desc, &name],
+                "UPDATE user_attr_config SET name  = $1, \"desc\" = $2, user_editable = $3, is_email = $4 WHERE name = $5",
+                &[&slf.name, &slf.desc, &slf.user_editable, &slf.is_email,  &name],
             )
             .await?;
 
@@ -377,6 +402,8 @@ impl From<UserAttrConfigEntity> for UserAttrConfigValueResponse {
         Self {
             name: value.name,
             desc: value.desc,
+            is_email: value.is_email,
+            user_editable: value.user_editable,
         }
     }
 }

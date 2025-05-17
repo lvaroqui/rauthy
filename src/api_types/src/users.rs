@@ -197,6 +197,8 @@ pub struct UserAttrConfigRequest {
     /// Validation: `^[a-zA-Z0-9-_/]{0,128}$`
     #[validate(regex(path = "*RE_ATTR_DESC", code = "[a-zA-Z0-9À-ÿ-\\s]{2,128}"))]
     pub desc: Option<String>,
+    pub user_editable: bool,
+    pub is_email: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Validate, ToSchema)]
@@ -288,6 +290,8 @@ pub struct PasskeyResponse {
 pub struct UserAttrConfigValueResponse {
     pub name: String,
     pub desc: Option<String>,
+    pub user_editable: bool,
+    pub is_email: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

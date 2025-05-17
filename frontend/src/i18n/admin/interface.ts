@@ -22,6 +22,8 @@ export interface I18nAdmin {
         delete1: string,
         desc: string,
         name: string,
+        user_editable: string,
+        is_email: string,
     },
     clients: {
         backchannelLogout: string,

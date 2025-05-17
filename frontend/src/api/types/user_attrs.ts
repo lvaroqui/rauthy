@@ -8,11 +8,15 @@ export interface UserAttrConfigRequest {
     name: string,
     /// Validation: PATTERN_ATTR_DESC
     desc?: string,
+    user_editable: boolean,
+    is_email: boolean
 }
 
 export interface UserAttrConfigValueResponse {
     name: string,
     desc?: string,
+    user_editable: boolean,
+    is_email: boolean
 }
 
 export interface UserAttrConfigResponse {
